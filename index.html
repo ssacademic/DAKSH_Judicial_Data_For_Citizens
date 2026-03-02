@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Karnataka HC Appeals — A Data Analysis by Lawgorithm</title>
+  <meta name="description"
+    content="An independent analysis of 20,646 resolved First Appeals from the Karnataka High Court. How long do cases take? What patterns exist in the data?" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/countup.js@2.8.0/dist/countUp.umd.js"></script>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --navy:       #1C2B4A;
+  --navy-light: #2E4270;
+  --amber:      #E8920A;
+  --amber-pale: #FFF5E0;
+  --teal:       #1A9E8F;
+  --coral:      #D95B3E;
+  --slate:      #6B7A93;
+  --smoke:      #F5F5F3;
+  --white:      #FFFFFF;
+  --border:     #E8E8E4;
+
+  --f-serif: 'Playfair Display', Georgia, serif;
+  --f-sans:  'Inter', system-ui, sans-serif;
+
+  --max-story:     680px;
+  --max-wide:      960px;
+  --max-full:     1200px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESET + BASE
+═══════════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  font-family: var(--f-sans);
+  background: var(--smoke);
+  color: var(--navy);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODE SYSTEM
+   body.story    → citizen view (default)
+   body.investigate → analyst view
+═══════════════════════════════════════════════════════════════════════════ */
+.story-only      { display: block; }
+.investigate-only { display: none; }
+
+body.investigate .story-only      { display: none; }
+body.investigate .investigate-only { display: block; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYOUT HELPERS
+═══════════════════════════════════════════════════════════════════════════ */
+.wrap-story {
+  max-width: var(--max-story);
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+.wrap-wide {
+  max-width: var(--max-wide);
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+.wrap-full {
+  max-width: var(--max-full);
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAV BAR
+═══════════════════════════════════════════════════════════════════════════ */
+#navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.nav-brand {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+.nav-brand span { color: var(--amber); }
+
+/* Mode toggle */
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  background: var(--smoke);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.mode-btn {
+  border: none;
+  background: transparent;
+  border-radius: 100px;
+  padding: 0.35rem 0.9rem;
+  font-family: var(--f-sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--slate);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  white-space: nowrap;
+}
+.mode-btn.active {
+  background: var(--navy);
+  color: var(--white);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COVER SECTION
+═══════════════════════════════════════════════════════════════════════════ */
+#cover {
+  background: var(--navy);
+  color: var(--white);
+  min-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 5rem 1.5rem 4rem;
+  position: relative;
+  overflow: hidden;
+}
+#cover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 60% 40%,
+      rgba(232,146,10,0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 20% 80%,
+      rgba(26,158,143,0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+.cover-inner {
+  max-width: var(--max-story);
+  margin-inline: auto;
+  position: relative;
+  z-index: 1;
+}
+.cover-kicker {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 600;
+  color: var(--amber);
+  margin-bottom: 1.25rem;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeUp 0.6s var(--ease-out) 0.2s forwards;
+}
+.cover-title {
+  font-family: var(--f-serif);
+  font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: fadeUp 0.7s var(--ease-out) 0.35s forwards;
+}
+.cover-title em {
+  font-style: normal;
+  color: var(--amber);
+}
+.cover-sub {
+  font-size: 1.05rem;
+  font-weight: 300;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.75;
+  max-width: 520px;
+  margin-bottom: 3rem;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: fadeUp 0.7s var(--ease-out) 0.5s forwards;
+}
+.cover-stats {
+  display: flex;
+  gap: 0;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 2rem;
+  opacity: 0;
+  animation: fadeUp 0.7s var(--ease-out) 0.7s forwards;
+}
+.cover-stat {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.75rem 1.5rem 0.75rem 0;
+  border-right: 1px solid rgba(255,255,255,0.1);
+  margin-right: 1.5rem;
+}
+.cover-stat:last-child { border-right: none; margin-right: 0; }
+.cs-n {
+  font-family: var(--f-serif);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--amber);
+  line-height: 1;
+  margin-bottom: 0.35rem;
+}
+.cs-l {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.4;
+}
+.scroll-cue {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  color: rgba(255,255,255,0.3);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  animation: bounce 2s ease-in-out infinite;
+}
+.scroll-cue svg { opacity: 0.4; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION CHROME
+═══════════════════════════════════════════════════════════════════════════ */
+.section {
+  padding: 5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.section.white { background: var(--white); }
+.section.smoke { background: var(--smoke); }
+.section.navy  { background: var(--navy); color: var(--white); }
+
+.sec-kicker {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  font-weight: 600;
+  color: var(--amber);
+  margin-bottom: 0.6rem;
+}
+.sec-h {
+  font-family: var(--f-serif);
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.6rem;
+  color: var(--navy);
+}
+.section.navy .sec-h { color: var(--white); }
+.sec-sub {
+  font-size: 0.95rem;
+  color: var(--slate);
+  line-height: 1.75;
+  max-width: 560px;
+  margin-bottom: 2.5rem;
+}
+.section.navy .sec-sub { color: rgba(255,255,255,0.6); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACT I — THE WAIT
+   People grid: 100 icons coloured by time band
+═══════════════════════════════════════════════════════════════════════════ */
+.people-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 2rem 0;
+  max-width: 540px;
+}
+.person-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
+}
+.person-icon.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+.person-icon.band-0 { background: var(--teal); }       /* under 3m */
+.person-icon.band-1 { background: #52B5A4; }           /* 3–6m */
+.person-icon.band-2 { background: #8BCFB0; }           /* 6–12m */
+.person-icon.band-3 { background: var(--amber); }      /* 1–2yr */
+.person-icon.band-4 { background: #D4780A; }           /* 2–3yr */
+.person-icon.band-5 { background: var(--coral); }      /* 3–5yr */
+.person-icon.band-6 { background: #B03020; }           /* 5yr+ */
+
+.people-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.2rem;
+  margin-top: 1rem;
+  font-size: 0.78rem;
+  color: var(--slate);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACT II — THE SPREAD
+   Spectrum: 5 proportionally-sized bands
+═══════════════════════════════════════════════════════════════════════════ */
+.spectrum-wrap {
+  margin: 2rem 0;
+}
+.spectrum-bar {
+  display: flex;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+.spectrum-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: white;
+  transition: flex 0.8s var(--ease-out);
+  cursor: default;
+  position: relative;
+}
+.spectrum-segment:hover { filter: brightness(1.1); }
+.spectrum-segment.seg-fastest { background: var(--teal); }
+.spectrum-segment.seg-fast    { background: #7BC8A4; }
+.spectrum-segment.seg-middle  { background: var(--amber); }
+.spectrum-segment.seg-slow    { background: #D4780A; }
+.spectrum-segment.seg-slowest { background: var(--coral); }
+
+.spectrum-labels {
+  display: flex;
+  margin-top: 1rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.spec-label {
+  flex: 1;
+  min-width: 120px;
+}
+.spec-label-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.2rem;
+}
+.spec-label-range {
+  font-size: 0.82rem;
+  color: var(--slate);
+}
+.spec-label-cases {
+  font-size: 0.78rem;
+  color: var(--slate);
+  margin-top: 0.1rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACT III — THE RECORD (Outcome Void)
+═══════════════════════════════════════════════════════════════════════════ */
+.void-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 480px;
+  margin: 2rem 0;
+}
+.void-square {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.void-square.visible { opacity: 1; transform: scale(1); }
+.void-square.lit     { background: var(--navy); }
+.void-square.dark    { background: var(--border); }
+
+.void-label {
+  font-size: 0.82rem;
+  color: var(--slate);
+  margin-top: 0.75rem;
+  line-height: 1.6;
+}
+.void-label strong { color: var(--navy); }
+
+/* Outcome breakdown cards (investigate mode) */
+.outcome-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.outcome-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.1rem 1rem;
+}
+.oc-n {
+  font-family: var(--f-serif);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1;
+  margin-bottom: 0.3rem;
+}
+.oc-label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--navy);
+  margin-bottom: 0.2rem;
+}
+.oc-note {
+  font-size: 0.75rem;
+  color: var(--slate);
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INVESTIGATE MODE — D3 CHART CONTAINERS
+═══════════════════════════════════════════════════════════════════════════ */
+.chart-container {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.chart-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 0.25rem;
+}
+.chart-sub {
+  font-size: 0.78rem;
+  color: var(--slate);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+#histogram-svg, #courts-svg, #cohort-svg { width: 100%; display: block; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INFO BOXES
+═══════════════════════════════════════════════════════════════════════════ */
+.box {
+  border-radius: 0 8px 8px 0;
+  padding: 0.9rem 1.1rem;
+  font-size: 0.86rem;
+  line-height: 1.7;
+  margin: 1.5rem 0;
+}
+.box-info   { background: #EEF6FB; border-left: 3px solid #3A6EA5; color: #1C3A5A; }
+.box-warn   { background: var(--amber-pale); border-left: 3px solid var(--amber); color: #5A3E00; }
+.box-note   { background: #F0F4F8; border-left: 3px solid var(--slate); color: #3A4A5A; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DATA SCORECARD (investigate mode)
+═══════════════════════════════════════════════════════════════════════════ */
+.scorecard {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 1.5rem 0;
+}
+.sc-head {
+  background: var(--smoke);
+  padding: 0.75rem 1.2rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--slate);
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 1rem;
+}
+.sc-row {
+  padding: 0.75rem 1.2rem;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: start;
+  font-size: 0.84rem;
+}
+.sc-field   { color: var(--navy); font-weight: 500; }
+.sc-note    { font-size: 0.75rem; color: var(--slate); margin-top: 0.15rem; }
+.badge {
+  border-radius: 100px;
+  padding: 0.18rem 0.7rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.b-ok   { background: #E4F5F0; color: #0A5C4A; }
+.b-warn { background: var(--amber-pale); color: #7A4F00; }
+.b-bad  { background: #FFF0EE; color: #7A2000; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACTION CARDS
+═══════════════════════════════════════════════════════════════════════════ */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.action-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.4rem 1.2rem;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.18s, border-color 0.18s, transform 0.18s;
+  display: block;
+}
+.action-card:hover {
+  border-color: var(--amber);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+.ac-ico  { font-size: 1.5rem; margin-bottom: 0.7rem; }
+.ac-t    { font-size: 0.93rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--navy); }
+.ac-b    { font-size: 0.82rem; color: var(--slate); line-height: 1.6; }
+.ac-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--amber);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════════════════════════════ */
+footer {
+  background: var(--navy);
+  color: rgba(255,255,255,0.55);
+  padding: 3rem 1.5rem;
+  font-size: 0.8rem;
+  line-height: 1.9;
+}
+.footer-grid {
+  max-width: var(--max-wide);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 2rem;
+}
+footer h4 {
+  color: rgba(255,255,255,0.8);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+}
+footer a { color: var(--amber); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+.footer-bottom {
+  max-width: var(--max-wide);
+  margin: 2rem auto 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCROLL ANIMATIONS
+═══════════════════════════════════════════════════════════════════════════ */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s var(--ease-out), transform 0.7s var(--ease-out);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KEYFRAMES
+═══════════════════════════════════════════════════════════════════════════ */
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%       { transform: translateX(-50%) translateY(6px); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .cover-stats      { flex-direction: column; gap: 1.25rem; }
+  .cover-stat       { border-right: none; margin-right: 0;
+                      border-bottom: 1px solid rgba(255,255,255,0.1);
+                      padding-bottom: 1rem; }
+  .cover-stat:last-child { border-bottom: none; }
+  .people-grid      { gap: 4px; }
+  .person-icon      { width: 22px; height: 22px; }
+  .void-square      { width: 28px; height: 28px; }
+  .action-grid      { grid-template-columns: 1fr; }
+  .footer-grid      { grid-template-columns: 1fr; }
+  .spectrum-labels  { flex-direction: column; }
+}
+</style>
+</head>
+
+<!-- ═══════ STOP HERE. This is the end of Part 2. ═══════ -->
+
+<body class="story">
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     NAV
+════════════════════════════════════════════════════════════════════════ -->
+<nav id="navbar">
+  <div class="nav-brand">
+    <span>Lawgorithm</span> · Karnataka HC · First Appeals · 2015–2019
+  </div>
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btn-story"   onclick="setMode('story')">Overview</button>
+    <button class="mode-btn"        id="btn-invest"  onclick="setMode('investigate')">Investigate</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     COVER
+════════════════════════════════════════════════════════════════════════ -->
+<section id="cover">
+  <div class="cover-inner">
+    <p class="cover-kicker">Karnataka High Court · Principal Bench, Bengaluru · Data snapshot: January 2021</p>
+    <h1 class="cover-title">
+      <em id="cover-n">20,646</em> cases.<br>
+      What does the data tell us?
+    </h1>
+    <p class="cover-sub">
+      An independent analysis of resolved First Appeals (MFA) from the Karnataka High Court.
+      How long do cases take? How consistent is the system? What do outcomes look like?
+    </p>
+    <div class="cover-stats">
+      <div class="cover-stat">
+        <div class="cs-n" id="cover-median">–</div>
+        <div class="cs-l">Median days to resolution<br><span id="cover-median-yr" style="color:var(--amber);font-size:0.85em"></span></div>
+      </div>
+      <div class="cover-stat">
+        <div class="cs-n" id="cover-over3">–</div>
+        <div class="cs-l">of cases took<br>more than 3 years</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cs-n" id="cover-spread">–</div>
+        <div class="cs-l">spread between fastest<br>and slowest court groups</div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-cue">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M8 3v10M4 9l4 4 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    scroll
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     ACT I — THE WAIT
+════════════════════════════════════════════════════════════════════════ -->
+<section id="act-wait" class="section white">
+  <div class="wrap-story">
+
+    <!-- STORY MODE -->
+    <div class="story-only">
+      <p class="sec-kicker reveal">The wait</p>
+      <h2 class="sec-h reveal reveal-delay-1">How long did it actually take?</h2>
+      <p class="sec-sub reveal reveal-delay-2">
+        Each circle below represents roughly 200 cases.
+        Colour shows how long those cases took to resolve.
+      </p>
+
+      <div id="people-grid" class="people-grid reveal reveal-delay-3"></div>
+
+      <div class="people-legend reveal" id="people-legend"></div>
+
+      <div class="box box-info reveal" style="margin-top:1.5rem">
+        📌 <strong>The modal experience</strong> is 1–2 years —
+        more cases fall in this band than any other.
+        The typical person waits about <strong id="inline-median">577</strong> days.
+        1 in 5 waited longer than 3 years.
+      </div>
+
+      <div class="box box-warn reveal">
+        ⚠️ <strong>These are closed cases only.</strong>
+        Cases still pending as of January 2021 are not in this dataset.
+        The full picture of how long cases take cannot be determined from this data alone.
+      </div>
+    </div>
+
+    <!-- INVESTIGATE MODE -->
+    <div class="investigate-only">
+      <p class="sec-kicker">The wait — full distribution</p>
+      <h2 class="sec-h">Disposal time across all 20,646 cases</h2>
+      <div class="chart-container">
+        <div class="chart-title">Distribution of days from filing to resolution</div>
+        <div class="chart-sub">
+          Each bar is a group of cases that took that many days.
+          Vertical lines mark the 25th percentile, median, and 90th percentile.
+        </div>
+        <svg id="histogram-svg" height="280"></svg>
+      </div>
+      <div class="chart-container">
+        <div class="chart-title">Cases by time band</div>
+        <div class="chart-sub">Same data, grouped into plain categories.</div>
+        <svg id="bands-svg" height="220"></svg>
+      </div>
+      <div class="box box-note">
+        📋 <strong>Survivorship note:</strong>
+        Only cases resolved before January 2021 are included.
+        Cases filed in 2018–2019 that were still pending at that point are absent.
+        This means the dataset likely under-represents slow-resolving recent cases.
+        Year-on-year trend claims cannot be made reliably from this data.
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     ACT II — THE SPREAD
+════════════════════════════════════════════════════════════════════════ -->
+<section id="act-spread" class="section smoke">
+  <div class="wrap-story">
+
+    <!-- STORY MODE -->
+    <div class="story-only">
+      <p class="sec-kicker reveal">The spread</p>
+      <h2 class="sec-h reveal reveal-delay-1">Not all cases experience the same system</h2>
+      <p class="sec-sub reveal reveal-delay-2">
+        Courts were grouped by their median resolution time.
+        The bar below shows how cases are distributed across these groups —
+        width is proportional to the number of cases.
+      </p>
+
+      <div class="spectrum-wrap reveal reveal-delay-3">
+        <div class="spectrum-bar" id="spectrum-bar"></div>
+        <div class="spectrum-labels" id="spectrum-labels"></div>
+      </div>
+
+      <div class="box box-info reveal">
+        📌 <strong id="middle-pct">56%</strong> of all cases went through courts
+        whose median resolution time falls in the middle band (roughly 1–2 years).
+        A meaningful minority — <strong id="slow-pct">22%</strong> — went through
+        the two slower groups.
+        The causes of this variation — case complexity, workload distribution,
+        other factors — are not visible in this dataset.
+      </div>
+    </div>
+
+    <!-- INVESTIGATE MODE -->
+    <div class="investigate-only">
+      <p class="sec-kicker">The spread — court detail</p>
+      <h2 class="sec-h">Median resolution time across court groups</h2>
+      <p class="sec-sub">
+        Courts with 10+ resolved cases, grouped into quintiles by median disposal time.
+        Individual courts are not named — NJDG court numbers are internal identifiers
+        that do not map to public-facing court hall names.
+      </p>
+
+      <div class="chart-container">
+        <div class="chart-title">Distribution of court medians — all courts with 10+ cases</div>
+        <div class="chart-sub">
+          Each tick is one court. The spread shows how varied median wait times are
+          across the 97 courts with sufficient data.
+        </div>
+        <svg id="courts-svg" height="160"></svg>
+      </div>
+
+      <div id="court-buckets-table"></div>
+
+      <div class="box box-note">
+        📋 The fastest court median is <strong id="fastest-med">–</strong> days
+        and the slowest is <strong id="slowest-med">–</strong> days —
+        a <strong id="spread-ratio">–</strong>× difference.
+        What drives this variation is not determinable from disposal data alone.
+        Case complexity, workload, and bench composition likely all play a role.
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     ACT III — THE RECORD
+════════════════════════════════════════════════════════════════════════ -->
+<section id="act-record" class="section white">
+  <div class="wrap-story">
+
+    <!-- STORY MODE -->
+    <div class="story-only">
+      <p class="sec-kicker reveal">The record</p>
+      <h2 class="sec-h reveal reveal-delay-1">What happened when cases closed?</h2>
+      <p class="sec-sub reveal reveal-delay-2">
+        Each square below represents 1% of all cases.
+        Dark squares have a recorded outcome. Grey squares do not.
+      </p>
+
+      <div id="void-grid" class="void-grid reveal reveal-delay-3"></div>
+
+      <p class="void-label reveal">
+        <strong id="void-missing-pct">74</strong>% of cases have no recorded outcome
+        in NJDG — the case was closed, but how it was closed was never entered.
+        Only <strong id="void-known-pct">26</strong>% have any outcome detail.
+      </p>
+
+      <div class="box box-warn reveal" style="margin-top:1.5rem">
+        ⚠️ This is a <strong>data completeness finding</strong>, not a legal one.
+        The outcome may have been recorded in physical records —
+        it simply was not entered into NJDG.
+      </div>
+    </div>
+
+    <!-- INVESTIGATE MODE -->
+    <div class="investigate-only">
+      <p class="sec-kicker">The record — outcome detail</p>
+      <h2 class="sec-h">Outcomes for the <span id="invest-out-n">–</span> cases with recorded data</h2>
+      <p class="sec-sub">
+        Only <span id="invest-out-pct">–</span>% of cases have a substantive outcome recorded.
+        The breakdown below covers those cases only.
+      </p>
+      <div class="outcome-cards" id="outcome-cards"></div>
+      <div class="box box-note" style="margin-top:1.5rem">
+        📋 <strong>"Closed — manner not recorded"</strong> means the case was disposed
+        in NJDG but without an outcome entry. <strong>"Dropped (not pursued)"</strong>
+        is procedurally distinct from a contested dismissal on merits —
+        the petitioner did not appear or follow up.
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     COHORT SECTION (investigate only)
+════════════════════════════════════════════════════════════════════════ -->
+<section id="act-cohort" class="section smoke investigate-only">
+  <div class="wrap-wide">
+    <p class="sec-kicker">Filing year breakdown</p>
+    <h2 class="sec-h">Cases by filing year — speed composition</h2>
+    <p class="sec-sub">
+      Each column shows how cases from that filing year distributed across speed bands.
+      Columns get shorter for recent years because only cases resolved by Jan 2021
+      are included — not all cases had time to close.
+    </p>
+    <div class="chart-container">
+      <div class="chart-title">Speed composition by filing year</div>
+      <div class="chart-sub">
+        ⚠️ 2018 and 2019 columns are smaller — not because fewer cases were filed,
+        but because only fast-resolving cases had time to close before the Jan 2021 snapshot.
+        Do not interpret shrinking columns as improvement.
+      </div>
+      <svg id="cohort-svg" height="300"></svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     DATA SCORECARD (investigate only)
+════════════════════════════════════════════════════════════════════════ -->
+<section id="act-scorecard" class="section white investigate-only">
+  <div class="wrap-story">
+    <p class="sec-kicker">Data quality</p>
+    <h2 class="sec-h">What this data can and cannot tell us</h2>
+    <p class="sec-sub">
+      An honest field-by-field assessment of the dataset used in this analysis.
+    </p>
+    <div class="scorecard">
+      <div class="sc-head">
+        <span>Field</span><span>Status</span>
+      </div>
+      <div class="sc-row">
+        <div>
+          <div class="sc-field">Filing and decision dates</div>
+          <div class="sc-note">Core metric — used to compute all disposal times</div>
+        </div>
+        <span class="badge b-ok">✓ Complete</span>
+      </div>
+      <div class="sc-row">
+        <div>
+          <div class="sc-field">Days to resolution (DISPOSALTIME_ADJ)</div>
+          <div class="sc-note">Pre-computed in source data, consistent with date calculation</div>
+        </div>
+        <span class="badge b-ok">✓ Complete</span>
+      </div>
+      <div class="sc-row">
+        <div>
+          <div class="sc-field">Court hall identifier</div>
+          <div class="sc-note">Internal NJDG ID — does not map to public court hall names</div>
+        </div>
+        <span class="badge b-ok">✓ Complete</span>
+      </div>
+      <div class="sc-row">
+        <div>
+          <div class="sc-field">Case type</div>
+          <div class="sc-note">All MFA (Miscellaneous First Appeals) — an administrative category, not a subject-matter type</div>
+        </div>
+        <span class="badge b-warn">⚠ Partial</span>
+      </div>
+      <div class="sc-row">
+        <div>
+          <div class="sc-field">Outcome of case</div>
+          <div class="sc-note">73.8% of cases have no recorded outcome in NJDG</div>
+        </div>
+        <span class="badge b-bad">✗ 26% filled</span>
+      </div>
+      <div class="sc-row">
+        <div>
+          <div class="sc-field">Subject matter (Acts)</div>
+          <div class="sc-note">What the case was about — missing for 98.4% of cases</div>
+        </div>
+        <span class="badge b-bad">✗ 1.6% filled</span>
+      </div>
+      <div class="sc-row">
+        <div>
+          <div class="sc-field">Judge names</div>
+          <div class="sc-note">Field is 99.2% filled but all entries read "Honorable Judge" — no usable data</div>
+        </div>
+        <span class="badge b-bad">✗ Anonymised</span>
+      </div>
+      <div class="sc-row">
+        <div>
+          <div class="sc-field">Pending cases</div>
+          <div class="sc-note">Not included — only resolved cases in this dataset (survivorship bias)</div>
+        </div>
+        <span class="badge b-bad">✗ Not included</span>
+      </div>
+      <div class="sc-row">
+        <div>
+          <div class="sc-field">Year-on-year trend</div>
+          <div class="sc-note">Cannot be assessed — recent cohorts under-represented due to Jan 2021 cutoff</div>
+        </div>
+        <span class="badge b-bad">✗ Not reliable</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     ACT IV — WHAT NOW
+════════════════════════════════════════════════════════════════════════ -->
+<section id="act-action" class="section smoke">
+  <div class="wrap-story">
+    <p class="sec-kicker reveal">What you can do</p>
+    <h2 class="sec-h reveal reveal-delay-1">Resources for citizens and researchers</h2>
+    <p class="sec-sub reveal reveal-delay-2">
+      This analysis uses publicly available data.
+      The same data is accessible to any citizen or researcher.
+    </p>
+    <div class="action-grid reveal reveal-delay-3">
+      <a class="action-card" href="https://ecourts.gov.in" target="_blank" rel="noopener">
+        <div class="ac-ico">🔍</div>
+        <div class="ac-t">Track your case</div>
+        <div class="ac-b">Every HC case has a CNR number. Check status, next date, and court in real time.</div>
+        <span class="ac-link">eCourts Portal →</span>
+      </a>
+      <a class="action-card" href="https://njdg.ecourts.gov.in" target="_blank" rel="noopener">
+        <div class="ac-ico">📊</div>
+        <div class="ac-t">Explore live court data</div>
+        <div class="ac-b">NJDG publishes real-time pendency statistics for all Indian courts.</div>
+        <span class="ac-link">NJDG Portal →</span>
+      </a>
+      <a class="action-card" href="https://rtionline.gov.in" target="_blank" rel="noopener">
+        <div class="ac-ico">📝</div>
+        <div class="ac-t">File an RTI</div>
+        <div class="ac-b">Request court performance or case-handling information from the HC Registry under the RTI Act.</div>
+        <span class="ac-link">RTI Online Portal →</span>
+      </a>
+      <a class="action-card" href="https://dakshindia.org" target="_blank" rel="noopener">
+        <div class="ac-ico">📖</div>
+        <div class="ac-t">Independent research</div>
+        <div class="ac-b">DAKSH India and Vidhi Centre publish evidence-based research on judicial system performance.</div>
+        <span class="ac-link">DAKSH India →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <h4>About this analysis</h4>
+      Built by <strong style="color:rgba(255,255,255,0.8)">Lawgorithm</strong>
+      to make judicial data accessible to citizens and researchers.<br><br>
+      <strong style="color:rgba(255,255,255,0.7)">Data source:</strong>
+      NJDG via ISDM Hackathon dataset<br>
+      <strong style="color:rgba(255,255,255,0.7)">Coverage:</strong>
+      MFA (First Appeals), Karnataka HC, 2015–2019<br>
+      <strong style="color:rgba(255,255,255,0.7)">Snapshot:</strong>
+      Disposed cases as of January 2021<br>
+      <strong style="color:rgba(255,255,255,0.7)">Total cases:</strong>
+      20,646
+    </div>
+    <div>
+      <h4>Key limitations</h4>
+      ① Resolved cases only — pending cases not included<br>
+      ② 73.8% of cases have no recorded outcome<br>
+      ③ Subject matter unknown for 98.4% of cases<br>
+      ④ Judge names not available in source data<br>
+      ⑤ Year-on-year comparisons not reliable from this dataset<br>
+      ⑥ Court IDs are internal — not public-facing names
+    </div>
+    <div>
+      <h4>Links</h4>
+      <a href="https://njdg.ecourts.gov.in">NJDG Portal</a><br>
+      <a href="https://ecourts.gov.in">eCourts</a><br>
+      <a href="https://dakshindia.org">DAKSH India</a><br>
+      <a href="https://vidhilegalpolicy.in">Vidhi Legal Policy Centre</a><br>
+      <a href="https://rtionline.gov.in">RTI Online Portal</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 Lawgorithm · Independent analysis · Not legal advice</span>
+    <span>Data: NJDG · ISDM Hackathon</span>
+  </div>
+</footer>
+
+<!-- ═══════ STOP HERE. End of Part 3. Part 4 (script) comes next. ═══════ -->
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════════════════
+let S = {}; // summary.json
+let H = []; // histogram.json
+let C = {}; // courts.json
+let O = {}; // outcomes.json
+let K = []; // cohorts.json
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  LOAD ALL DATA THEN BOOT
+// ═══════════════════════════════════════════════════════════════════════════
+Promise.all([
+  fetch('data/summary.json').then(r => r.json()),
+  fetch('data/histogram.json').then(r => r.json()),
+  fetch('data/courts.json').then(r => r.json()),
+  fetch('data/outcomes.json').then(r => r.json()),
+  fetch('data/cohorts.json').then(r => r.json()),
+]).then(([s, h, c, o, k]) => {
+  S = s; H = h; C = c; O = o; K = k;
+  boot();
+}).catch(err => {
+  console.error('Data load failed:', err);
+  document.body.innerHTML =
+    '<div style="padding:3rem;font-family:sans-serif;color:#c00">' +
+    '<strong>Could not load data files.</strong><br>' +
+    'Make sure preprocess.py has been run and the data/ folder exists.' +
+    '</div>';
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  BOOT — runs once all data loaded
+// ═══════════════════════════════════════════════════════════════════════════
+function boot() {
+  populateCover();
+  buildPeopleGrid();
+  buildSpectrum();
+  buildVoidGrid();
+  buildOutcomeCards();
+  populateInvestigateText();
+  initScrollReveal();
+  // D3 charts built lazily when investigate mode is first activated
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  MODE TOGGLE
+// ═══════════════════════════════════════════════════════════════════════════
+let chartsBuilt = false;
+
+function setMode(mode) {
+  document.body.className = mode;
+  document.getElementById('btn-story').classList.toggle('active', mode === 'story');
+  document.getElementById('btn-invest').classList.toggle('active', mode === 'investigate');
+
+  if (mode === 'investigate' && !chartsBuilt) {
+    chartsBuilt = true;
+    // Small delay so DOM is painted before D3 measures widths
+    setTimeout(() => {
+      buildHistogram();
+      buildBandsChart();
+      buildCourtsChart();
+      buildCohortChart();
+      buildCourtTable();
+    }, 80);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  COVER
+// ═══════════════════════════════════════════════════════════════════════════
+function populateCover() {
+  // Animated counters
+  new countUp.CountUp('cover-median', S.median_days,
+    { duration: 2, useEasing: true, startVal: 0 }).start();
+
+  document.getElementById('cover-median-yr').textContent =
+    `≈ ${(S.median_days / 365).toFixed(1)} years`;
+
+  document.getElementById('cover-over3').textContent =
+    S.pct_over3yr + '%';
+
+  document.getElementById('cover-spread').textContent =
+    C.spread_ratio + '×';
+
+  document.getElementById('inline-median').textContent = S.median_days;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PEOPLE GRID  (100 circles, each = ~1% of cases)
+// ═══════════════════════════════════════════════════════════════════════════
+const BAND_COLORS = [
+  '#1A9E8F',  // under 3m   — teal
+  '#52B5A4',  // 3–6m
+  '#8BCFB0',  // 6–12m
+  '#E8920A',  // 1–2yr      — amber
+  '#D4780A',  // 2–3yr
+  '#D95B3E',  // 3–5yr      — coral
+  '#B03020',  // 5yr+
+];
+
+function buildPeopleGrid() {
+  const grid   = document.getElementById('people-grid');
+  const legend = document.getElementById('people-legend');
+
+  // Build 100 dots proportional to band percentages
+  const dots = [];
+  let allocated = 0;
+  S.bands.forEach((b, i) => {
+    const n = (i < S.bands.length - 1)
+      ? Math.round(b.pct)
+      : (100 - allocated);
+    for (let j = 0; j < n; j++) dots.push(i);
+    allocated += Math.round(b.pct);
+  });
+  // Trim/pad to exactly 100
+  while (dots.length > 100) dots.pop();
+  while (dots.length < 100) dots.push(dots[dots.length - 1]);
+
+  dots.forEach((bandIdx, i) => {
+    const el = document.createElement('div');
+    el.className = `person-icon band-${bandIdx}`;
+    el.style.background = BAND_COLORS[bandIdx];
+    el.style.transitionDelay = `${i * 12}ms`;
+    el.title = S.bands[bandIdx].label;
+    grid.appendChild(el);
+  });
+
+  // Legend
+  S.bands.forEach((b, i) => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `
+      <div class="legend-dot" style="background:${BAND_COLORS[i]}"></div>
+      <span>${b.label} &nbsp;·&nbsp; ${b.pct}%</span>
+    `;
+    legend.appendChild(item);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SPECTRUM BAR
+// ═══════════════════════════════════════════════════════════════════════════
+const SEG_COLORS = {
+  fastest: '#1A9E8F',
+  fast:    '#7BC8A4',
+  middle:  '#E8920A',
+  slow:    '#D4780A',
+  slowest: '#D95B3E',
+};
+const SEG_LABELS = {
+  fastest: 'Fastest group',
+  fast:    'Fast group',
+  middle:  'Middle group',
+  slow:    'Slow group',
+  slowest: 'Slowest group',
+};
+
+function buildSpectrum() {
+  const bar    = document.getElementById('spectrum-bar');
+  const labels = document.getElementById('spectrum-labels');
+
+  let middlePct = 0, slowPct = 0;
+
+  C.buckets.forEach(b => {
+    // Bar segment — width proportional to case share
+    const seg = document.createElement('div');
+    seg.className = `spectrum-segment seg-${b.bucket}`;
+    seg.style.flex = b.case_pct;
+    seg.style.background = SEG_COLORS[b.bucket];
+    seg.title = `${SEG_LABELS[b.bucket]}: ${b.case_pct}% of cases · median ${b.median_lo}–${b.median_hi} days`;
+    if (b.case_pct >= 8) seg.textContent = b.case_pct + '%';
+    bar.appendChild(seg);
+
+    // Label below
+    const lbl = document.createElement('div');
+    lbl.className = 'spec-label';
+    lbl.innerHTML = `
+      <div class="spec-label-name" style="color:${SEG_COLORS[b.bucket]}">
+        ${SEG_LABELS[b.bucket]}
+      </div>
+      <div class="spec-label-range">
+        Median: ${b.median_lo}–${b.median_hi} days
+      </div>
+      <div class="spec-label-cases">
+        ${b.case_pct}% of cases · ${b.case_count.toLocaleString()} cases
+      </div>
+    `;
+    labels.appendChild(lbl);
+
+    if (b.bucket === 'middle') middlePct = b.case_pct;
+    if (b.bucket === 'slow' || b.bucket === 'slowest') slowPct += b.case_pct;
+  });
+
+  document.getElementById('middle-pct').textContent = middlePct + '%';
+  document.getElementById('slow-pct').textContent   = Math.round(slowPct) + '%';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  VOID GRID  (100 squares, lit = has outcome)
+// ═══════════════════════════════════════════════════════════════════════════
+function buildVoidGrid() {
+  const grid  = document.getElementById('void-grid');
+  const litN  = Math.round(100 - O.without_outcome_pct);
+  const darkN = 100 - litN;
+
+  document.getElementById('void-missing-pct').textContent = O.without_outcome_pct;
+  document.getElementById('void-known-pct').textContent   = litN;
+
+  for (let i = 0; i < 100; i++) {
+    const sq = document.createElement('div');
+    sq.className = `void-square ${i < litN ? 'lit' : 'dark'}`;
+    sq.style.transitionDelay = `${i * 10}ms`;
+    grid.appendChild(sq);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  OUTCOME CARDS  (investigate mode)
+// ═══════════════════════════════════════════════════════════════════════════
+function buildOutcomeCards() {
+  const wrap = document.getElementById('outcome-cards');
+  document.getElementById('invest-out-n').textContent =
+    O.with_outcome.toLocaleString();
+  document.getElementById('invest-out-pct').textContent =
+    (100 - O.without_outcome_pct).toFixed(1);
+
+  O.breakdown.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'outcome-card';
+    card.innerHTML = `
+      <div class="oc-n">${item.n.toLocaleString()}</div>
+      <div class="oc-label">${item.label}</div>
+      <div class="oc-note">
+        ${item.pct_of_total}% of all cases ·
+        ${item.pct_of_known}% of cases with outcomes
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  INVESTIGATE TEXT FILLS
+// ═══════════════════════════════════════════════════════════════════════════
+function populateInvestigateText() {
+  const el = (id) => document.getElementById(id);
+  if (el('fastest-med')) el('fastest-med').textContent = C.fastest_median;
+  if (el('slowest-med')) el('slowest-med').textContent = C.slowest_median;
+  if (el('spread-ratio')) el('spread-ratio').textContent = C.spread_ratio;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  D3 HISTOGRAM
+// ═══════════════════════════════════════════════════════════════════════════
+function buildHistogram() {
+  const svg    = d3.select('#histogram-svg');
+  const wrap   = document.getElementById('histogram-svg').parentElement;
+  const W      = wrap.clientWidth - 48;
+  const H      = 280;
+  const margin = { top: 10, right: 20, bottom: 40, left: 50 };
+  const iW     = W  - margin.left - margin.right;
+  const iH     = H  - margin.top  - margin.bottom;
+
+  svg.attr('width', W).attr('height', H);
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleLinear()
+    .domain([0, d3.max(H.map(d => d.x1))])
+    .range([0, iW]);
+
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(H.map(d => d.n)) * 1.12])
+    .range([iH, 0]);
+
+  // Bars
+  g.selectAll('rect')
+    .data(H)
+    .join('rect')
+    .attr('x',      d => x(d.x0) + 1)
+    .attr('width',  d => Math.max(0, x(d.x1) - x(d.x0) - 1))
+    .attr('y',      d => y(d.n))
+    .attr('height', d => iH - y(d.n))
+    .attr('fill',   '#3A6EA5')
+    .attr('opacity', 0.75)
+    .append('title')
+    .text(d => `${Math.round(d.x0)}–${Math.round(d.x1)} days: ${d.n.toLocaleString()} cases`);
+
+  // Percentile lines
+  const lines = [
+    { val: S.p25,  label: `p25 · ${S.p25}d`,    color: '#1A9E8F' },
+    { val: S.median_days, label: `Median · ${S.median_days}d`, color: '#E8920A' },
+    { val: S.p90,  label: `p90 · ${S.p90}d`,    color: '#D95B3E' },
+  ];
+  lines.forEach(ln => {
+    g.append('line')
+      .attr('x1', x(ln.val)).attr('x2', x(ln.val))
+      .attr('y1', 0).attr('y2', iH)
+      .attr('stroke', ln.color)
+      .attr('stroke-width', 1.5)
+      .attr('stroke-dasharray', '4,3');
+    g.append('text')
+      .attr('x', x(ln.val) + 4)
+      .attr('y', 14)
+      .attr('font-size', '10px')
+      .attr('fill', ln.color)
+      .attr('font-family', 'Inter, sans-serif')
+      .text(ln.label);
+  });
+
+  // Axes
+  g.append('g').attr('transform', `translate(0,${iH})`)
+    .call(d3.axisBottom(x)
+      .tickValues([0, 365, 730, 1095, 1460, 1825])
+      .tickFormat(d => d === 0 ? '0' : `${Math.round(d/365)}yr`))
+    .call(ax => ax.select('.domain').remove())
+    .call(ax => ax.selectAll('.tick line').attr('stroke', '#ddd'))
+    .call(ax => ax.selectAll('text').attr('font-size', '11px')
+      .attr('font-family', 'Inter, sans-serif').attr('fill', '#6B7A93'));
+
+  g.append('g')
+    .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(',~s')))
+    .call(ax => ax.select('.domain').remove())
+    .call(ax => ax.selectAll('.tick line').attr('stroke', '#eee'))
+    .call(ax => ax.selectAll('text').attr('font-size', '10px')
+      .attr('font-family', 'Inter, sans-serif').attr('fill', '#6B7A93'));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  D3 BANDS CHART (horizontal bar, investigate mode)
+// ═══════════════════════════════════════════════════════════════════════════
+function buildBandsChart() {
+  const svg    = d3.select('#bands-svg');
+  const wrap   = document.getElementById('bands-svg').parentElement;
+  const W      = wrap.clientWidth - 48;
+  const margin = { top: 8, right: 60, bottom: 24, left: 110 };
+  const iW     = W - margin.left - margin.right;
+
+  const bands  = S.bands;
+  const rowH   = 26;
+  const H      = bands.length * rowH + margin.top + margin.bottom;
+  svg.attr('width', W).attr('height', H);
+
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+  const iH = bands.length * rowH;
+
+  const x = d3.scaleLinear().domain([0, d3.max(bands.map(b => b.pct))]).range([0, iW]);
+  const y = d3.scaleBand().domain(bands.map(b => b.label)).range([0, iH]).padding(0.25);
+
+  // Bars
+  g.selectAll('rect')
+    .data(bands)
+    .join('rect')
+    .attr('x', 0)
+    .attr('y', d => y(d.label))
+    .attr('height', y.bandwidth())
+    .attr('width', d => x(d.pct))
+    .attr('fill', (d, i) => BAND_COLORS[i])
+    .attr('rx', 3);
+
+  // Labels right of bar
+  g.selectAll('.bar-label')
+    .data(bands)
+    .join('text')
+    .attr('class', 'bar-label')
+    .attr('x', d => x(d.pct) + 6)
+    .attr('y', d => y(d.label) + y.bandwidth() / 2 + 4)
+    .attr('font-size', '11px')
+    .attr('font-family', 'Inter, sans-serif')
+    .attr('fill', '#1C2B4A')
+    .text(d => `${d.pct}% · ${d.n.toLocaleString()}`);
+
+  // Y axis
+  g.append('g')
+    .call(d3.axisLeft(y).tickSize(0))
+    .call(ax => ax.select('.domain').remove())
+    .call(ax => ax.selectAll('text')
+      .attr('font-size', '11px')
+      .attr('font-family', 'Inter, sans-serif')
+      .attr('fill', '#1C2B4A'));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  D3 COURTS STRIP CHART
+// ═══════════════════════════════════════════════════════════════════════════
+function buildCourtsChart() {
+  const svg    = d3.select('#courts-svg');
+  const wrap   = document.getElementById('courts-svg').parentElement;
+  const W      = wrap.clientWidth - 48;
+  const H      = 160;
+  const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+  const iW     = W - margin.left - margin.right;
+  const iH     = H - margin.top  - margin.bottom;
+
+  svg.attr('width', W).attr('height', H);
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const medians = C.all_medians;
+  const x = d3.scaleLinear()
+    .domain([0, d3.max(medians)])
+    .range([0, iW]);
+
+  // Gradient strip
+  const defs = svg.append('defs');
+  const grad = defs.append('linearGradient').attr('id', 'court-grad');
+  grad.append('stop').attr('offset', '0%').attr('stop-color', '#1A9E8F');
+  grad.append('stop').attr('offset', '50%').attr('stop-color', '#E8920A');
+  grad.append('stop').attr('offset', '100%').attr('stop-color', '#D95B3E');
+
+  g.append('rect')
+    .attr('x', 0).attr('y', iH / 2 - 8)
+    .attr('width', iW).attr('height', 16)
+    .attr('rx', 4)
+    .attr('fill', 'url(#court-grad)')
+    .attr('opacity', 0.3);
+
+  // Tick marks for each court
+  g.selectAll('.court-tick')
+    .data(medians)
+    .join('line')
+    .attr('class', 'court-tick')
+    .attr('x1', d => x(d)).attr('x2', d => x(d))
+    .attr('y1', iH / 2 - 14).attr('y2', iH / 2 + 14)
+    .attr('stroke', (d, i) => {
+      const t = i / medians.length;
+      return d3.interpolateRgb('#1A9E8F', '#D95B3E')(t);
+    })
+    .attr('stroke-width', 1.5)
+    .attr('opacity', 0.7);
+
+  // Median of all medians marker
+  const overallMed = d3.median(medians);
+  g.append('line')
+    .attr('x1', x(overallMed)).attr('x2', x(overallMed))
+    .attr('y1', iH / 2 - 20).attr('y2', iH / 2 + 20)
+    .attr('stroke', '#1C2B4A')
+    .attr('stroke-width', 2);
+  g.append('text')
+    .attr('x', x(overallMed) + 4)
+    .attr('y', iH / 2 - 22)
+    .attr('font-size', '10px')
+    .attr('font-family', 'Inter, sans-serif')
+    .attr('fill', '#1C2B4A')
+    .text(`Median of medians: ${Math.round(overallMed)}d`);
+
+  // Axis
+  g.append('g').attr('transform', `translate(0,${iH})`)
+    .call(d3.axisBottom(x)
+      .tickValues([0, 365, 730, 1095, 1460])
+      .tickFormat(d => d === 0 ? '0' : `${Math.round(d/365)}yr`))
+    .call(ax => ax.select('.domain').attr('stroke', '#ddd'))
+    .call(ax => ax.selectAll('text')
+      .attr('font-size', '10px')
+      .attr('font-family', 'Inter, sans-serif')
+      .attr('fill', '#6B7A93'));
+
+  // Annotations
+  g.append('text').attr('x', 0).attr('y', -4)
+    .attr('font-size', '10px').attr('font-family', 'Inter, sans-serif')
+    .attr('fill', '#1A9E8F').text(`Fastest: ${C.fastest_median}d`);
+  g.append('text').attr('x', iW).attr('y', -4)
+    .attr('text-anchor', 'end')
+    .attr('font-size', '10px').attr('font-family', 'Inter, sans-serif')
+    .attr('fill', '#D95B3E').text(`Slowest: ${C.slowest_median}d`);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  D3 COHORT STACKED BAR
+// ═══════════════════════════════════════════════════════════════════════════
+function buildCohortChart() {
+  const svg    = d3.select('#cohort-svg');
+  const wrap   = document.getElementById('cohort-svg').parentElement;
+  const W      = wrap.clientWidth - 48;
+  const H      = 300;
+  const margin = { top: 20, right: 120, bottom: 50, left: 50 };
+  const iW     = W - margin.left - margin.right;
+  const iH     = H - margin.top  - margin.bottom;
+
+  svg.attr('width', W).attr('height', H);
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const keys   = ['pct_under1yr', 'pct_1to2yr', 'pct_2to3yr', 'pct_over3yr'];
+  const labels = ['Under 1 yr', '1–2 yrs', '2–3 yrs', 'Over 3 yrs'];
+  const colors = ['#1A9E8F', '#E8920A', '#D4780A', '#D95B3E'];
+
+  const stacked = d3.stack().keys(keys)(K);
+
+  const x = d3.scaleBand()
+    .domain(K.map(d => d.year))
+    .range([0, iW])
+    .padding(0.25);
+
+  const y = d3.scaleLinear().domain([0, 100]).range([iH, 0]);
+
+  // Bars
+  stacked.forEach((layer, li) => {
+    g.selectAll(`.layer-${li}`)
+      .data(layer)
+      .join('rect')
+      .attr('class', `layer-${li}`)
+      .attr('x',      d => x(d.data.year))
+      .attr('y',      d => y(d[1]))
+      .attr('height', d => y(d[0]) - y(d[1]))
+      .attr('width',  x.bandwidth())
+      .attr('fill',   colors[li])
+      .attr('opacity', 0.85)
+      .append('title')
+      .text(d => `${d.data.year} · ${labels[li]}: ${(d[1]-d[0]).toFixed(1)}%`);
+  });
+
+  // n= annotations
+  K.forEach(d => {
+    g.append('text')
+      .attr('x', x(d.year) + x.bandwidth() / 2)
+      .attr('y', iH + 28)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', '10px')
+      .attr('font-family', 'Inter, sans-serif')
+      .attr('fill', d.note ? '#D95B3E' : '#6B7A93')
+      .text(`n=${d.n.toLocaleString()}${d.note ? ' ⚠' : ''}`);
+  });
+
+  // Axes
+  g.append('g').attr('transform', `translate(0,${iH})`)
+    .call(d3.axisBottom(x).tickSize(0))
+    .call(ax => ax.select('.domain').remove())
+    .call(ax => ax.selectAll('text')
+      .attr('font-size', '12px').attr('font-family', 'Inter, sans-serif')
+      .attr('fill', '#1C2B4A').attr('dy', '1.2em'));
+
+  g.append('g')
+    .call(d3.axisLeft(y).ticks(5).tickFormat(d => d + '%'))
+    .call(ax => ax.select('.domain').remove())
+    .call(ax => ax.selectAll('.tick line').attr('stroke', '#eee'))
+    .call(ax => ax.selectAll('text')
+      .attr('font-size', '10px').attr('font-family', 'Inter, sans-serif')
+      .attr('fill', '#6B7A93'));
+
+  // Legend
+  labels.forEach((lbl, i) => {
+    const ly = i * 22;
+    g.append('rect')
+      .attr('x', iW + 12).attr('y', ly)
+      .attr('width', 12).attr('height', 12)
+      .attr('rx', 2).attr('fill', colors[i]);
+    g.append('text')
+      .attr('x', iW + 28).attr('y', ly + 10)
+      .attr('font-size', '10px').attr('font-family', 'Inter, sans-serif')
+      .attr('fill', '#1C2B4A').text(lbl);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  COURT BUCKET TABLE
+// ═══════════════════════════════════════════════════════════════════════════
+function buildCourtTable() {
+  const wrap = document.getElementById('court-buckets-table');
+  let html = `
+    <div class="scorecard" style="margin-top:1.5rem">
+      <div class="sc-head">
+        <span>Court group</span><span>Median range</span>
+      </div>`;
+  C.buckets.forEach(b => {
+    const color = SEG_COLORS[b.bucket];
+    html += `
+      <div class="sc-row">
+        <div>
+          <div class="sc-field">
+            <span style="display:inline-block;width:10px;height:10px;
+              border-radius:50%;background:${color};margin-right:6px"></span>
+            ${SEG_LABELS[b.bucket]}
+          </div>
+          <div class="sc-note">
+            ${b.court_count} courts ·
+            ${b.case_count.toLocaleString()} cases ·
+            ${b.case_pct}% of total
+          </div>
+        </div>
+        <span class="badge" style="background:${color}22;color:${color}">
+          ${b.median_lo}–${b.median_hi} days
+        </span>
+      </div>`;
+  });
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SCROLL REVEAL — IntersectionObserver
+// ═══════════════════════════════════════════════════════════════════════════
+function initScrollReveal() {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('visible');
+
+      // Trigger people grid animation
+      if (entry.target.id === 'people-grid') animatePeopleGrid();
+
+      // Trigger void grid animation
+      if (entry.target.id === 'void-grid') animateVoidGrid();
+
+      io.unobserve(entry.target);
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.reveal, #people-grid, #void-grid')
+    .forEach(el => io.observe(el));
+}
+
+function animatePeopleGrid() {
+  document.querySelectorAll('.person-icon').forEach((el, i) => {
+    setTimeout(() => el.classList.add('visible'), i * 14);
+  });
+}
+
+function animateVoidGrid() {
+  document.querySelectorAll('.void-square').forEach((el, i) => {
+    setTimeout(() => el.classList.add('visible'), i * 12);
+  });
+}
+</script>
+</body>
+</html>
