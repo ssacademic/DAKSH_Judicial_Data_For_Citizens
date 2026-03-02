@@ -1,0 +1,10 @@
+{
+  "buildCommand": "pip install pandas && python preprocess.py",
+  "outputDirectory": ".",
+  "headers": [
+    {
+      "source": "/data/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    }
+  ]
+}
