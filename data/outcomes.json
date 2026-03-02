@@ -1,0 +1,56 @@
+{
+  "total_cases": 20653,
+  "with_outcome": 5418,
+  "without_outcome": 15235,
+  "without_outcome_pct": 73.8,
+  "breakdown": [
+    {
+      "label": "Closed \u2014 manner not recorded",
+      "n": 2663,
+      "pct_of_total": 12.9,
+      "pct_of_known": 49.2
+    },
+    {
+      "label": "Partly allowed",
+      "n": 1258,
+      "pct_of_total": 6.1,
+      "pct_of_known": 23.2
+    },
+    {
+      "label": "Dismissed (on merits)",
+      "n": 646,
+      "pct_of_total": 3.1,
+      "pct_of_known": 11.9
+    },
+    {
+      "label": "Dropped (not pursued)",
+      "n": 489,
+      "pct_of_total": 2.4,
+      "pct_of_known": 9.0
+    },
+    {
+      "label": "Rejected",
+      "n": 135,
+      "pct_of_total": 0.7,
+      "pct_of_known": 2.5
+    },
+    {
+      "label": "Fully allowed",
+      "n": 113,
+      "pct_of_total": 0.5,
+      "pct_of_known": 2.1
+    },
+    {
+      "label": "Sent back to lower court",
+      "n": 104,
+      "pct_of_total": 0.5,
+      "pct_of_known": 1.9
+    },
+    {
+      "label": "Case lapsed",
+      "n": 10,
+      "pct_of_total": 0.0,
+      "pct_of_known": 0.2
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "total_cases": 20653,
+  "median_days": 577,
+  "mean_days": 672,
+  "p10": 150,
+  "p25": 324,
+  "p75": 951,
+  "p90": 1388,
+  "pct_under1yr": 28.9,
+  "pct_1to2yr": 35.1,
+  "pct_2to3yr": 17.8,
+  "pct_over3yr": 18.1,
+  "bands": [
+    {
+      "label": "Under 3 months",
+      "lo": 0,
+      "hi": 90,
+      "n": 1238,
+      "pct": 6.0
+    },
+    {
+      "label": "3\u20136 months",
+      "lo": 90,
+      "hi": 180,
+      "n": 1342,
+      "pct": 6.5
+    },
+    {
+      "label": "6\u201312 months",
+      "lo": 180,
+      "hi": 365,
+      "n": 3395,
+      "pct": 16.4
+    },
+    {
+      "label": "1\u20132 years",
+      "lo": 365,
+      "hi": 730,
+      "n": 7249,
+      "pct": 35.1
+    },
+    {
+      "label": "2\u20133 years",
+      "lo": 730,
+      "hi": 1095,
+      "n": 3681,
+      "pct": 17.8
+    },
+    {
+      "label": "3\u20135 years",
+      "lo": 1095,
+      "hi": 1825,
+      "n": 3453,
+      "pct": 16.7
+    },
+    {
+      "label": "5+ years",
+      "lo": 1825,
+      "hi": 9999,
+      "n": 295,
+      "pct": 1.4
+    }
+  ],
+  "outcome_recorded_pct": 26.2,
+  "outcome_missing_pct": 73.8
+}

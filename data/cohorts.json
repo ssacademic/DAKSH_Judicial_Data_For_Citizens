@@ -1,0 +1,52 @@
+[
+  {
+    "year": 2015,
+    "n": 6497,
+    "median": 705,
+    "pct_under1yr": 22.6,
+    "pct_1to2yr": 29.0,
+    "pct_2to3yr": 17.4,
+    "pct_over3yr": 31.1,
+    "note": ""
+  },
+  {
+    "year": 2016,
+    "n": 5185,
+    "median": 649,
+    "pct_under1yr": 23.6,
+    "pct_1to2yr": 32.7,
+    "pct_2to3yr": 19.4,
+    "pct_over3yr": 24.3,
+    "note": ""
+  },
+  {
+    "year": 2017,
+    "n": 4261,
+    "median": 551,
+    "pct_under1yr": 32.2,
+    "pct_1to2yr": 32.7,
+    "pct_2to3yr": 24.2,
+    "pct_over3yr": 10.9,
+    "note": ""
+  },
+  {
+    "year": 2018,
+    "n": 3081,
+    "median": 495,
+    "pct_under1yr": 31.0,
+    "pct_1to2yr": 52.2,
+    "pct_2to3yr": 16.7,
+    "pct_over3yr": 0.1,
+    "note": "Only fast-resolving cases had time to close by Jan 2021"
+  },
+  {
+    "year": 2019,
+    "n": 1629,
+    "median": 321,
+    "pct_under1yr": 58.9,
+    "pct_1to2yr": 40.9,
+    "pct_2to3yr": 0.1,
+    "pct_over3yr": 0.0,
+    "note": "Only fast-resolving cases had time to close by Jan 2021"
+  }
+]

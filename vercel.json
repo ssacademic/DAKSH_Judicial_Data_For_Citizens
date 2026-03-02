@@ -1,0 +1,10 @@
+{
+  "buildCommand": "uv run --python 3.12 python preprocess.py",
+  "outputDirectory": ".",
+  "headers": [
+    {
+      "source": "/data/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    }
+  ]
+}
