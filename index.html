@@ -1089,7 +1089,7 @@ footer a:hover { text-decoration: underline; }
 //  STATE
 // ═══════════════════════════════════════════════════════════════════════════
 let S = {}; // summary.json
-let H = []; // histogram.json
+let HIST = []; // histogram.json
 let C = {}; // courts.json
 let O = {}; // outcomes.json
 let K = []; // cohorts.json
@@ -1104,7 +1104,7 @@ Promise.all([
   fetch('data/outcomes.json').then(r => r.json()),
   fetch('data/cohorts.json').then(r => r.json()),
 ]).then(([s, h, c, o, k]) => {
-  S = s; H = h; C = c; O = o; K = k;
+  S = s; HIST = h; C = c; O = o; K = k;
   boot();
 }).catch(err => {
   console.error('Data load failed:', err);
@@ -1356,16 +1356,16 @@ function buildHistogram() {
   const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
   const x = d3.scaleLinear()
-    .domain([0, d3.max(H.map(d => d.x1))])
+    .domain([0, d3.max(HIST.map(d => d.x1))])
     .range([0, iW]);
 
   const y = d3.scaleLinear()
-    .domain([0, d3.max(H.map(d => d.n)) * 1.12])
+    .domain([0, d3.max(HIST.map(d => d.n)) * 1.12])
     .range([iH, 0]);
 
   // Bars
   g.selectAll('rect')
-    .data(H)
+    .data(HIST)
     .join('rect')
     .attr('x',      d => x(d.x0) + 1)
     .attr('width',  d => Math.max(0, x(d.x1) - x(d.x0) - 1))
