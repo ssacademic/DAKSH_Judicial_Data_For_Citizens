@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pip install pandas && python preprocess.py",
+  "buildCommand": "python preprocess.py",
   "outputDirectory": ".",
   "headers": [
     {
