@@ -1133,7 +1133,6 @@ function boot() {
 //  MODE TOGGLE
 // ═══════════════════════════════════════════════════════════════════════════
 let chartsBuilt = false;
-
 function setMode(mode) {
   document.body.className = mode;
   document.getElementById('btn-story').classList.toggle('active', mode === 'story');
@@ -1141,16 +1140,21 @@ function setMode(mode) {
 
   if (mode === 'investigate' && !chartsBuilt) {
     chartsBuilt = true;
-    // Small delay so DOM is painted before D3 measures widths
-    setTimeout(() => {
-      buildHistogram();
-      buildBandsChart();
-      buildCourtsChart();
-      buildCohortChart();
-      buildCourtTable();
-    }, 80);
+    // Double rAF: first frame applies display changes,
+    // second frame measures actual rendered widths
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        buildHistogram();
+        buildBandsChart();
+        buildCourtsChart();
+        buildCohortChart();
+        buildCourtTable();
+      });
+    });
   }
 }
+
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  COVER
@@ -1342,7 +1346,7 @@ function populateInvestigateText() {
 function buildHistogram() {
   const svg    = d3.select('#histogram-svg');
   const wrap   = document.getElementById('histogram-svg').parentElement;
-  const W      = wrap.clientWidth - 48;
+  const W      = wrap.clientWidth - 48 || 600;
   const H      = 280;
   const margin = { top: 10, right: 20, bottom: 40, left: 50 };
   const iW     = W  - margin.left - margin.right;
@@ -1418,7 +1422,7 @@ function buildHistogram() {
 function buildBandsChart() {
   const svg    = d3.select('#bands-svg');
   const wrap   = document.getElementById('bands-svg').parentElement;
-  const W      = wrap.clientWidth - 48;
+  const W      = wrap.clientWidth - 48 || 600;
   const margin = { top: 8, right: 60, bottom: 24, left: 110 };
   const iW     = W - margin.left - margin.right;
 
@@ -1472,7 +1476,7 @@ function buildBandsChart() {
 function buildCourtsChart() {
   const svg    = d3.select('#courts-svg');
   const wrap   = document.getElementById('courts-svg').parentElement;
-  const W      = wrap.clientWidth - 48;
+  const W      = wrap.clientWidth - 48 || 600;
   const H      = 160;
   const margin = { top: 20, right: 20, bottom: 40, left: 50 };
   const iW     = W - margin.left - margin.right;
@@ -1556,7 +1560,7 @@ function buildCourtsChart() {
 function buildCohortChart() {
   const svg    = d3.select('#cohort-svg');
   const wrap   = document.getElementById('cohort-svg').parentElement;
-  const W      = wrap.clientWidth - 48;
+  const W      = wrap.clientWidth - 48 || 600;
   const H      = 300;
   const margin = { top: 20, right: 120, bottom: 50, left: 50 };
   const iW     = W - margin.left - margin.right;
