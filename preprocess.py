@@ -28,8 +28,11 @@ for label, lo, hi in bands:
     band_data.append({"label": label, "lo": lo, "hi": hi,
                       "n": n, "pct": round(100 * n / N, 1)})
 
+from datetime import datetime
+
 summary = {
     "total_cases":        N,
+    "build_date":         datetime.utcnow().strftime("%B %Y"),
     "median_days":        int(d.median()),
     "mean_days":          int(d.mean()),
     "p10":                int(d.quantile(0.10)),
