@@ -7,6 +7,10 @@
     "pct_1to2yr": 29.0,
     "pct_2to3yr": 17.4,
     "pct_over3yr": 31.1,
+    "n_under1yr": 1467,
+    "n_1to2yr": 1883,
+    "n_2to3yr": 1128,
+    "n_over3yr": 2019,
     "note": ""
   },
   {
@@ -17,6 +21,10 @@
     "pct_1to2yr": 32.7,
     "pct_2to3yr": 19.4,
     "pct_over3yr": 24.3,
+    "n_under1yr": 1223,
+    "n_1to2yr": 1695,
+    "n_2to3yr": 1005,
+    "n_over3yr": 1262,
     "note": ""
   },
   {
@@ -27,6 +35,10 @@
     "pct_1to2yr": 32.7,
     "pct_2to3yr": 24.2,
     "pct_over3yr": 10.9,
+    "n_under1yr": 1370,
+    "n_1to2yr": 1395,
+    "n_2to3yr": 1032,
+    "n_over3yr": 464,
     "note": ""
   },
   {
@@ -37,6 +49,10 @@
     "pct_1to2yr": 52.2,
     "pct_2to3yr": 16.7,
     "pct_over3yr": 0.1,
+    "n_under1yr": 955,
+    "n_1to2yr": 1609,
+    "n_2to3yr": 514,
+    "n_over3yr": 3,
     "note": "Only fast-resolving cases had time to close by Jan 2021"
   },
   {
@@ -47,6 +63,10 @@
     "pct_1to2yr": 40.9,
     "pct_2to3yr": 0.1,
     "pct_over3yr": 0.0,
+    "n_under1yr": 960,
+    "n_1to2yr": 667,
+    "n_2to3yr": 2,
+    "n_over3yr": 0,
     "note": "Only fast-resolving cases had time to close by Jan 2021"
   }
 ]
