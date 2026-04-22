@@ -7,14 +7,9 @@
   <meta name="description"
     content="An independent analysis of resolved First Appeals (MFA) from the Karnataka High Court. How long do cases take? What patterns exist in the data?" />
 
-  <!-- Fonts — loaded async so they never block page render -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Fonts — async, no preconnect (avoids hanging TCP handshake on slow CDN days from India) -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600&display=swap"
         rel="stylesheet" media="print" onload="this.media='all'" />
-  <noscript>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  </noscript>
 
   <!-- Libraries loaded at bottom of body to avoid blocking page render -->
 
@@ -1058,7 +1053,9 @@ footer a:hover { text-decoration: underline; }
       <strong style="color:rgba(255,255,255,0.7)">Snapshot:</strong>
       Disposed cases as of January 2021<br>
       <strong style="color:rgba(255,255,255,0.7)">Total cases:</strong>
-      <span id="footer-total-n">–</span>
+      <span id="footer-total-n">–</span><br>
+      <strong style="color:rgba(255,255,255,0.7)">Page last updated:</strong>
+      <span id="footer-build-date">–</span>
     </div>
     <div>
       <h4>Key limitations</h4>
@@ -1201,6 +1198,8 @@ function populateCover() {
     const el = document.getElementById(id);
     if (el) el.textContent = fmt;
   });
+  const bd = document.getElementById('footer-build-date');
+  if (bd) bd.textContent = S.build_date || '–';
 
   // Animated counter — vanilla, no CDN dependency
   animateCount('cover-median', 0, S.median_days, 1800);
