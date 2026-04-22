@@ -90,12 +90,21 @@ for rank in ["fastest","fast","middle","slow","slowest"]:
         "median_mid":  int(g["median"].median()),
     })
 
+p25_med = cs["median"].quantile(0.25)
+p75_med = cs["median"].quantile(0.75)
+iqr_days   = int(round(p75_med - p25_med))
+iqr_months = int(round((p75_med - p25_med) / 30.44))
+
 courts_out = {
     "total_courts_analysed": int(len(cs)),
     "min_cases_threshold":   10,
     "fastest_median":        int(cs["median"].min()),
     "slowest_median":        int(cs["median"].max()),
     "spread_ratio":          round(cs["median"].max() / cs["median"].min(), 1),
+    "p25_median":            int(round(p25_med)),
+    "p75_median":            int(round(p75_med)),
+    "iqr_days":              iqr_days,
+    "iqr_months":            iqr_months,
     "buckets":               buckets,
     "all_medians":           sorted([int(x) for x in cs["median"].tolist()]),
 }
@@ -106,7 +115,7 @@ print(f"✓ courts.json — {len(cs)} courts, "
 
 # ── 4. outcomes.json ──────────────────────────────────────────────────────────
 outcome_map = {
-    "DISPOSED":                      "Closed — manner not recorded",
+    "DISPOSED":                      "Disposed — outcome not entered",
     "Partly Allowed":                "Partly allowed",
     "DISMISSED":                     "Dismissed (on merits)",
     "Dismissed for Non-Prosecution": "Dropped (not pursued)",
@@ -116,6 +125,11 @@ outcome_map = {
     "Abated":                        "Case lapsed",
 }
 df["outcome_label"] = df["NATURE_OF_DISPOSAL_OUTCOME"].map(outcome_map)
+# Catch-all: any non-null value not in the map gets labelled rather than lost
+df.loc[
+    df["NATURE_OF_DISPOSAL_OUTCOME"].notna() & df["outcome_label"].isna(),
+    "outcome_label"
+] = "Other (unclassified)"
 oc = (df["outcome_label"].value_counts(dropna=True)
         .reset_index()
         .rename(columns={"outcome_label":"label","count":"n"}))
