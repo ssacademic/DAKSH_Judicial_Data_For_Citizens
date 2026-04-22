@@ -174,3 +174,24 @@ with open("data/cohorts.json", "w") as f:
 print(f"✓ cohorts.json — {len(cohort_rows)} filing years")
 
 print("\n✅ All done. data/ folder ready.")
+
+# ── 6. Inline all data into index.html ────────────────────────────────────────
+# This eliminates all fetch() calls on the live site — instant load, no CDN wait.
+bundle = json.dumps({
+    'summary':   summary,
+    'histogram': hist_data,
+    'courts':    courts_out,
+    'outcomes':  outcomes_out,
+    'cohorts':   cohort_rows
+}, separators=(',', ':'))
+
+with open('index.html', 'r', encoding='utf-8') as f:
+    html = f.read()
+
+if '/* __APP_DATA__ */' in html:
+    html = html.replace('/* __APP_DATA__ */', bundle)
+    with open('index.html', 'w', encoding='utf-8') as f:
+        f.write(html)
+    print(f"✓ index.html — {len(bundle):,} bytes of data inlined (no fetch calls on live site)")
+else:
+    print("⚠ index.html placeholder not found — data not inlined, fetch fallback will be used")
