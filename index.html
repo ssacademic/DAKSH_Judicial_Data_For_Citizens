@@ -304,7 +304,7 @@ body.investigate .investigate-only { display: block; }
   display: grid;
   grid-template-columns: repeat(10, 28px);
   gap: 5px;
-  margin: 2rem 0;
+  margin: 2rem auto;
 }
 .person-icon {
   width: 28px;
@@ -711,7 +711,7 @@ footer a:hover { text-decoration: underline; }
       </div>
       <div class="cover-stat">
         <div class="cs-n" id="cover-spread">–</div>
-        <div class="cs-l">months longer for a typical<br>slow court vs a fast court<br><span style="font-size:0.78em;opacity:0.55;line-height:1.8">typical fast = P25 courts · typical slow = P75 courts</span></div>
+        <div class="cs-l">months longer for a typical<br>slow court vs a fast court</div>
       </div>
     </div>
   </div>
@@ -746,7 +746,7 @@ footer a:hover { text-decoration: underline; }
         📌 <strong>The modal experience</strong> is 1–2 years —
         more cases fall in this band than any other.
         The typical person waits about <strong id="inline-median">577</strong> days.
-        Nearly 1 in 5 waited longer than 3 years.
+        1 in 5 waited longer than 3 years.
       </div>
 
       <div class="box box-warn reveal">
@@ -821,7 +821,7 @@ footer a:hover { text-decoration: underline; }
       <p class="sec-kicker">The spread — court detail</p>
       <h2 class="sec-h">Median resolution time across court groups</h2>
       <p class="sec-sub">
-        Courts with 10+ resolved cases, grouped into quintiles by median disposal time.
+        Courts with 10+ resolved cases, grouped into five equal bands by median disposal time.
         Individual courts are not named — NJDG court numbers are internal identifiers
         that do not map to public-facing court hall names.
       </p>
@@ -996,7 +996,7 @@ footer a:hover { text-decoration: underline; }
       <div class="sc-row">
         <div>
           <div class="sc-field">Year-on-year trend</div>
-          <div class="sc-note">Cannot be assessed — recent cohorts under-represented due to Jan 2021 cutoff</div>
+          <div class="sc-note">Cannot be assessed — recent filing years under-represented due to Jan 2021 cutoff</div>
         </div>
         <span class="badge b-bad">✗ Not reliable</span>
       </div>
@@ -1098,25 +1098,36 @@ let O = {}; // outcomes.json
 let K = []; // cohorts.json
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  LOAD ALL DATA THEN BOOT
+//  LOAD DATA — inline first (live site), fetch fallback (local dev)
 // ═══════════════════════════════════════════════════════════════════════════
-Promise.all([
-  fetch('data/summary.json').then(r => r.json()),
-  fetch('data/histogram.json').then(r => r.json()),
-  fetch('data/courts.json').then(r => r.json()),
-  fetch('data/outcomes.json').then(r => r.json()),
-  fetch('data/cohorts.json').then(r => r.json()),
-]).then(([s, h, c, o, k]) => {
-  S = s; HIST = h; C = c; O = o; K = k;
-  boot();
-}).catch(err => {
-  console.error('Data load failed:', err);
-  document.body.innerHTML =
-    '<div style="padding:3rem;font-family:sans-serif;color:#c00">' +
-    '<strong>Could not load data files.</strong><br>' +
-    'Make sure preprocess.py has been run and the data/ folder exists.' +
-    '</div>';
-});
+(function () {
+  const el = document.getElementById('app-data');
+  if (el && el.textContent.trim().charAt(0) === '{') {
+    // Data was inlined by preprocess.py — zero network calls needed
+    const d = JSON.parse(el.textContent);
+    S = d.summary; HIST = d.histogram; C = d.courts; O = d.outcomes; K = d.cohorts;
+    boot();
+  } else {
+    // Fallback: fetch individual files (used during local development)
+    Promise.all([
+      fetch('data/summary.json').then(r => r.json()),
+      fetch('data/histogram.json').then(r => r.json()),
+      fetch('data/courts.json').then(r => r.json()),
+      fetch('data/outcomes.json').then(r => r.json()),
+      fetch('data/cohorts.json').then(r => r.json()),
+    ]).then(([s, h, c, o, k]) => {
+      S = s; HIST = h; C = c; O = o; K = k;
+      boot();
+    }).catch(err => {
+      console.error('Data load failed:', err);
+      document.body.innerHTML =
+        '<div style="padding:3rem;font-family:sans-serif;color:#c00">' +
+        '<strong>Could not load data files.</strong><br>' +
+        'Make sure preprocess.py has been run and the data/ folder exists.' +
+        '</div>';
+    });
+  }
+})();
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  BOOT — runs once all data loaded
@@ -1717,5 +1728,7 @@ function animateVoidGrid() {
   });
 }
 </script>
+<!-- Data injected here by preprocess.py — eliminates all fetch calls on the live site -->
+<script type="application/json" id="app-data">/* __APP_DATA__ */</script>
 </body>
 </html>
