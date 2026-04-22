@@ -166,6 +166,10 @@ for yr in sorted(df["filing_year"].dropna().unique()):
         "pct_1to2yr":   round(100 * ((sub > 365) & (sub <= 730)).mean(), 1),
         "pct_2to3yr":   round(100 * ((sub > 730) & (sub <= 1095)).mean(), 1),
         "pct_over3yr":  round(100 * (sub > 1095).mean(), 1),
+        "n_under1yr":   int((sub <= 365).sum()),
+        "n_1to2yr":     int(((sub > 365) & (sub <= 730)).sum()),
+        "n_2to3yr":     int(((sub > 730) & (sub <= 1095)).sum()),
+        "n_over3yr":    int((sub > 1095).sum()),
         "note": ("Only fast-resolving cases had time to close by Jan 2021"
                  if yr >= 2018 else "")
     })
