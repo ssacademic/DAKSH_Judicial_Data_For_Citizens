@@ -1175,6 +1175,23 @@ function buildAllCharts() {
 
 
 // ═══════════════════════════════════════════════════════════════════════════
+//  ANIMATE COUNT — vanilla, replaces countup.js CDN dependency
+// ═══════════════════════════════════════════════════════════════════════════
+function animateCount(id, from, to, duration) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    // ease out cubic
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(from + (to - from) * eased).toLocaleString();
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 //  COVER
 // ═══════════════════════════════════════════════════════════════════════════
 function populateCover() {
@@ -1185,9 +1202,8 @@ function populateCover() {
     if (el) el.textContent = fmt;
   });
 
-  // Animated counters
-  new countUp.CountUp('cover-median', S.median_days,
-    { duration: 2, useEasing: true, startVal: 0 }).start();
+  // Animated counter — vanilla, no CDN dependency
+  animateCount('cover-median', 0, S.median_days, 1800);
 
   document.getElementById('cover-median-yr').textContent =
     `≈ ${(S.median_days / 365).toFixed(1)} years`;
@@ -1740,7 +1756,5 @@ function animateVoidGrid() {
 </script>
 <!-- Data injected here by preprocess.py — eliminates all fetch calls on the live site -->
 <script type="application/json" id="app-data">/* __APP_DATA__ */</script>
-<!-- countup loads at bottom — small, needed immediately on boot -->
-<script src="https://cdn.jsdelivr.net/npm/countup.js@2.8.0/dist/countUp.umd.js"></script>
 </body>
 </html>
