@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Karnataka HC Appeals — A Data Analysis by Lawgorithm</title>
   <meta name="description"
-    content="An independent analysis of 20,646 resolved First Appeals from the Karnataka High Court. How long do cases take? What patterns exist in the data?" />
+    content="An independent analysis of resolved First Appeals (MFA) from the Karnataka High Court. How long do cases take? What patterns exist in the data?" />
 
   <!-- Fonts — loaded async so they never block page render -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -705,7 +705,7 @@ footer a:hover { text-decoration: underline; }
       </div>
       <div class="cover-stat">
         <div class="cs-n" id="cover-over3">–</div>
-        <div class="cs-l">of cases took<br>more than 3 years</div>
+        <div class="cs-l">cases took<br>more than 3 years</div>
       </div>
       <div class="cover-stat">
         <div class="cs-n" id="cover-spread">–</div>
@@ -757,7 +757,7 @@ footer a:hover { text-decoration: underline; }
     <!-- INVESTIGATE MODE -->
     <div class="investigate-only">
       <p class="sec-kicker">The wait — full distribution</p>
-      <h2 class="sec-h">Disposal time across all 20,646 cases</h2>
+      <h2 class="sec-h">Disposal time across all <span id="invest-total-n">–</span> cases</h2>
       <div class="chart-container">
         <div class="chart-title">Distribution of days from filing to resolution</div>
         <div class="chart-sub">
@@ -887,8 +887,8 @@ footer a:hover { text-decoration: underline; }
       </p>
       <div class="outcome-cards" id="outcome-cards"></div>
       <div class="box box-note" style="margin-top:1.5rem">
-        📋 <strong>"Closed — manner not recorded"</strong> means the case was disposed
-        in NJDG but without an outcome entry. <strong>"Dropped (not pursued)"</strong>
+        📋 <strong>"Disposed — outcome not entered"</strong> means the case was disposed
+        in NJDG but without a specific outcome recorded. <strong>"Dropped (not pursued)"</strong>
         is procedurally distinct from a contested dismissal on merits —
         the petitioner did not appear or follow up.
       </div>
@@ -1058,7 +1058,7 @@ footer a:hover { text-decoration: underline; }
       <strong style="color:rgba(255,255,255,0.7)">Snapshot:</strong>
       Disposed cases as of January 2021<br>
       <strong style="color:rgba(255,255,255,0.7)">Total cases:</strong>
-      20,646
+      <span id="footer-total-n">–</span>
     </div>
     <div>
       <h4>Key limitations</h4>
@@ -1178,9 +1178,12 @@ function buildAllCharts() {
 //  COVER
 // ═══════════════════════════════════════════════════════════════════════════
 function populateCover() {
-  // Case count from data (never hardcode this)
-  const totalEl = document.getElementById('cover-n');
-  if (totalEl) totalEl.textContent = S.total_cases.toLocaleString();
+  // Case count — fill everywhere it appears, never hardcode
+  const fmt = S.total_cases.toLocaleString();
+  ['cover-n', 'invest-total-n', 'footer-total-n'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = fmt;
+  });
 
   // Animated counters
   new countUp.CountUp('cover-median', S.median_days,
