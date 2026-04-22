@@ -7,11 +7,14 @@
   <meta name="description"
     content="An independent analysis of 20,646 resolved First Appeals from the Karnataka High Court. How long do cases take? What patterns exist in the data?" />
 
-  
-  <!-- Fonts -->
+  <!-- Fonts — loaded async so they never block page render -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  </noscript>
 
   <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
@@ -298,11 +301,10 @@ body.investigate .investigate-only { display: block; }
    People grid: 100 icons coloured by time band
 ═══════════════════════════════════════════════════════════════════════════ */
 .people-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(10, 28px);
   gap: 5px;
   margin: 2rem 0;
-  max-width: 540px;
 }
 .person-icon {
   width: 28px;
@@ -657,7 +659,7 @@ footer a:hover { text-decoration: underline; }
                       border-bottom: 1px solid rgba(255,255,255,0.1);
                       padding-bottom: 1rem; }
   .cover-stat:last-child { border-bottom: none; }
-  .people-grid      { gap: 4px; }
+  .people-grid      { grid-template-columns: repeat(10, 22px); gap: 4px; }
   .person-icon      { width: 22px; height: 22px; }
   .void-square      { width: 28px; height: 28px; }
   .action-grid      { grid-template-columns: 1fr; }
@@ -691,7 +693,7 @@ footer a:hover { text-decoration: underline; }
   <div class="cover-inner">
     <p class="cover-kicker">Karnataka High Court · Principal Bench, Bengaluru · Data snapshot: January 2021</p>
     <h1 class="cover-title">
-      <em id="cover-n">20,646</em> cases.<br>
+      <em id="cover-n">–</em> cases.<br>
       What does the data tell us?
     </h1>
     <p class="cover-sub">
@@ -709,7 +711,7 @@ footer a:hover { text-decoration: underline; }
       </div>
       <div class="cover-stat">
         <div class="cs-n" id="cover-spread">–</div>
-        <div class="cs-l">spread between fastest<br>and slowest court groups</div>
+        <div class="cs-l">months longer for a typical<br>slow court vs a fast court<br><span style="font-size:0.78em;opacity:0.55;line-height:1.8">typical fast = P25 courts · typical slow = P75 courts</span></div>
       </div>
     </div>
   </div>
@@ -744,13 +746,13 @@ footer a:hover { text-decoration: underline; }
         📌 <strong>The modal experience</strong> is 1–2 years —
         more cases fall in this band than any other.
         The typical person waits about <strong id="inline-median">577</strong> days.
-        1 in 5 waited longer than 3 years.
+        Nearly 1 in 5 waited longer than 3 years.
       </div>
 
       <div class="box box-warn reveal">
         ⚠️ <strong>These are closed cases only.</strong>
-        Cases still pending as of January 2021 are not in this dataset.
-        The full picture of how long cases take cannot be determined from this data alone.
+        Cases still pending as of January 2021 are not in this dataset —
+        likely the slower ones. The true median is probably higher.
       </div>
     </div>
 
@@ -836,9 +838,9 @@ footer a:hover { text-decoration: underline; }
       <div id="court-buckets-table"></div>
 
       <div class="box box-note">
-        📋 The fastest court median is <strong id="fastest-med">–</strong> days
-        and the slowest is <strong id="slowest-med">–</strong> days —
-        a <strong id="spread-ratio">–</strong>× difference.
+        📋 The middle half of courts had median resolution times between
+        <strong id="p25-med">–</strong> and <strong id="p75-med">–</strong> days —
+        a <strong id="iqr-days">–</strong>-day span across the interquartile range.
         What drives this variation is not determinable from disposal data alone.
         Case complexity, workload, and bench composition likely all play a role.
       </div>
@@ -1161,6 +1163,10 @@ function setMode(mode) {
 //  COVER
 // ═══════════════════════════════════════════════════════════════════════════
 function populateCover() {
+  // Case count from data (never hardcode this)
+  const totalEl = document.getElementById('cover-n');
+  if (totalEl) totalEl.textContent = S.total_cases.toLocaleString();
+
   // Animated counters
   new countUp.CountUp('cover-median', S.median_days,
     { duration: 2, useEasing: true, startVal: 0 }).start();
@@ -1172,7 +1178,7 @@ function populateCover() {
     S.pct_over3yr + '%';
 
   document.getElementById('cover-spread').textContent =
-    C.spread_ratio + '×';
+    '~' + C.iqr_months;
 
   document.getElementById('inline-median').textContent = S.median_days;
 }
@@ -1336,9 +1342,9 @@ function buildOutcomeCards() {
 // ═══════════════════════════════════════════════════════════════════════════
 function populateInvestigateText() {
   const el = (id) => document.getElementById(id);
-  if (el('fastest-med')) el('fastest-med').textContent = C.fastest_median;
-  if (el('slowest-med')) el('slowest-med').textContent = C.slowest_median;
-  if (el('spread-ratio')) el('spread-ratio').textContent = C.spread_ratio;
+  if (el('p25-med'))   el('p25-med').textContent   = C.p25_median;
+  if (el('p75-med'))   el('p75-med').textContent   = C.p75_median;
+  if (el('iqr-days'))  el('iqr-days').textContent  = C.iqr_days;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
