@@ -4,6 +4,10 @@
   "fastest_median": 16,
   "slowest_median": 1607,
   "spread_ratio": 100.5,
+  "p25_median": 325,
+  "p75_median": 924,
+  "iqr_days": 599,
+  "iqr_months": 20,
   "buckets": [
     {
       "bucket": "fastest",

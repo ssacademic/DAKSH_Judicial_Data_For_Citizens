@@ -1,14 +1,14 @@
 {
   "total_cases": 20653,
-  "with_outcome": 5418,
-  "without_outcome": 15235,
+  "with_outcome": 5420,
+  "without_outcome": 15233,
   "without_outcome_pct": 73.8,
   "breakdown": [
     {
-      "label": "Closed \u2014 manner not recorded",
+      "label": "Disposed \u2014 outcome not entered",
       "n": 2663,
       "pct_of_total": 12.9,
-      "pct_of_known": 49.2
+      "pct_of_known": 49.1
     },
     {
       "label": "Partly allowed",
@@ -51,6 +51,12 @@
       "n": 10,
       "pct_of_total": 0.0,
       "pct_of_known": 0.2
+    },
+    {
+      "label": "Other (unclassified)",
+      "n": 2,
+      "pct_of_total": 0.0,
+      "pct_of_known": 0.0
     }
   ]
 }
