@@ -910,11 +910,11 @@ footer a:hover { text-decoration: underline; }
       are included — not all cases had time to close.
     </p>
     <div class="chart-container">
-      <div class="chart-title">Speed composition by filing year</div>
+      <div class="chart-title">Cases resolved per filing year — by speed band</div>
       <div class="chart-sub">
-        ⚠️ 2018 and 2019 columns are smaller — not because fewer cases were filed,
-        but because only fast-resolving cases had time to close before the Jan 2021 snapshot.
-        Do not interpret shrinking columns as improvement.
+        Bar height shows how many cases from each filing year had resolved by January 2021.
+        2018 and 2019 bars are shorter because more cases from those years were still pending —
+        not because fewer were filed. Do not compare proportions across years.
       </div>
       <svg id="cohort-svg" height="300"></svg>
     </div>
@@ -1588,16 +1588,17 @@ function buildCohortChart() {
   const wrap   = document.getElementById('cohort-svg').parentElement;
   const W      = wrap.clientWidth - 48 || 600;
   const H      = 300;
-  const margin = { top: 20, right: 120, bottom: 50, left: 50 };
+  const margin = { top: 20, right: 120, bottom: 50, left: 60 };
   const iW     = W - margin.left - margin.right;
   const iH     = H - margin.top  - margin.bottom;
 
   svg.attr('width', W).attr('height', H);
   const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-  const keys   = ['pct_under1yr', 'pct_1to2yr', 'pct_2to3yr', 'pct_over3yr'];
+  // Use absolute counts — bars are literally shorter for 2018/2019
+  const keys   = ['n_under1yr', 'n_1to2yr', 'n_2to3yr', 'n_over3yr'];
   const labels = ['Under 1 yr', '1–2 yrs', '2–3 yrs', 'Over 3 yrs'];
-  const colors = ['#1A9E8F', '#E8920A', '#D4780A', '#D95B3E'];
+  const colors = ['#1A9E8F', '#E8C40A', '#D4780A', '#D95B3E'];
 
   const stacked = d3.stack().keys(keys)(K);
 
@@ -1606,7 +1607,8 @@ function buildCohortChart() {
     .range([0, iW])
     .padding(0.25);
 
-  const y = d3.scaleLinear().domain([0, 100]).range([iH, 0]);
+  const maxN = d3.max(K, d => d.n);
+  const y = d3.scaleLinear().domain([0, maxN * 1.05]).range([iH, 0]);
 
   // Bars
   stacked.forEach((layer, li) => {
@@ -1616,15 +1618,15 @@ function buildCohortChart() {
       .attr('class', `layer-${li}`)
       .attr('x',      d => x(d.data.year))
       .attr('y',      d => y(d[1]))
-      .attr('height', d => y(d[0]) - y(d[1]))
+      .attr('height', d => Math.max(0, y(d[0]) - y(d[1])))
       .attr('width',  x.bandwidth())
       .attr('fill',   colors[li])
       .attr('opacity', 0.85)
       .append('title')
-      .text(d => `${d.data.year} · ${labels[li]}: ${(d[1]-d[0]).toFixed(1)}%`);
+      .text(d => `${d.data.year} · ${labels[li]}: ${(d[1]-d[0]).toLocaleString()} cases`);
   });
 
-  // n= annotations
+  // n= annotations below x-axis
   K.forEach(d => {
     g.append('text')
       .attr('x', x(d.year) + x.bandwidth() / 2)
@@ -1645,7 +1647,7 @@ function buildCohortChart() {
       .attr('fill', '#1C2B4A').attr('dy', '1.2em'));
 
   g.append('g')
-    .call(d3.axisLeft(y).ticks(5).tickFormat(d => d + '%'))
+    .call(d3.axisLeft(y).ticks(5).tickFormat(d => d >= 1000 ? `${d/1000}k` : d))
     .call(ax => ax.select('.domain').remove())
     .call(ax => ax.selectAll('.tick line').attr('stroke', '#eee'))
     .call(ax => ax.selectAll('text')
